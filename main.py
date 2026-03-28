@@ -1,7 +1,7 @@
 comeon = "Smysl hry je zabit Caesara, tudiz odmitnout jeho vrazdu postrada smysl. Zkus to znovu. "
 texty = [ # prvni text v scene je ten ktery se objevi pri otazkach
 # level 0
-    [["Bibulus:  Zdravim priteli! Mam skvele zpravy - od dnesniho dne jsem konzulem!",# scena 1
+    [["Bibulus:  Zdravim priteli! Mam skvele zpravy - od dnesniho dne jsem konzulem! Jen se obavam, ze comita centuriata nezvolila jen moudre.            Caesar je konzulem, to nemuzeme dopustit! Vem si tento elixir, at se nahodou objevi v jeho poharu.",# scena 1
     "Bibulus:  Oddanost jsi mi neprisahal pro nic za nic! Seber se a bez, nebo budes dalsi."],
     ["Nemam cas, ani naladu na tve zertíky. Udelas to, nebo ne?"],# scena 1.5
     [""]],# scena 2
@@ -14,9 +14,9 @@ texty = [ # prvni text v scene je ten ktery se objevi pri otazkach
 odpovedi = [
 # level 0
     [["Cokoliv si prejete, pane Bibule. (vezmes si lahvicku)",# scena 1
-        "Uhm… Pane, jste si jisty. To, o čem mluvite neni nic lehkovazného, je to VRAZDA!",
+        "Uhm… Pane, jste si jisty. To, o cem mluvite neni nic lehkovazného, je to VRAZDA!",
         "NIKDY! Ja slouzim Caesarovi a nikdy bych mu neublizil!",
-        "Kdoze jste? V zivotě jsem vas nevidel…"],
+        "Kdoze jste? V zivote jsem vas nevidel…"],
     [" Omlouvam se, pane, hned to provedu.",# scena 1.5
         " Ne. Nebudu zabijet pro ciziho cloveka."],
     ["A02",# scena 2
@@ -39,7 +39,7 @@ odpovedi = [
 ]
 
 LIMIT_RADEK = 21
-POCET_RADKU = 8
+POCET_RADKU = 7
 
 buttons = AnalogPin.P0
 upButton = ADKeys.A
@@ -60,80 +60,131 @@ def button_pressed(button):
     else:
         return False
 
-def limit_otazky(pocet):
-    return pocet * LIMIT_RADEK + POCET_RADKU - pocet - 3 * pocet
+def limit_otazky(pocet): 
+    return LIMIT_RADEK * (POCET_RADKU-pocet) - 3 * pocet + pocet
 
-def answer_divider():
-    if odpovedi[level][scena][1].length + odpovedi[level][scena][2].length + odpovedi[level][scena][3].length + odpovedi[level][scena][4].length <= limit_otazky(4):
+def meric_delky(what,noneValue): #zjisťovač délky textu pro
+    if what == None:
+        return noneValue
+    else:
+        return what.length
+
+def delic_odpovedi(): #rozdělí odpovědi aby se vešly na obrazovku
+    odpoved1 = meric_delky(odpovedi[level][scena][0], 5)
+    odpoved2 = meric_delky(odpovedi[level][scena][1], 5)
+    odpoved3 = meric_delky(odpovedi[level][scena][2], 5)
+    odpoved4 = meric_delky(odpovedi[level][scena][3], 5)
+
+    if odpoved1 + odpoved2 + odpoved3 + odpoved4 <= limit_otazky(4):
         return [4, 0, 0, 0]
-    elif odpovedi[level][scena][1].length + odpovedi[level][scena][2].length + odpovedi[level][scena][3].length <= limit_otazky(3):
+    elif odpoved1 + odpoved2 + odpoved3 <= limit_otazky(3):
         return [3, 1, 0, 0]
-    elif odpovedi[level][scena][1].length + odpovedi[level][scena][2].length <= limit_otazky(2):
-        if odpovedi[level][scena][3].length + odpovedi[level][scena][4].length <= limit_otazky(2):
+    elif odpoved1 + odpoved2 <= limit_otazky(2):
+        if odpoved3 + odpoved4 <= limit_otazky(2):
             return [2, 2, 0, 0]
         else:
             return [2, 1, 1, 0]
 
-    if odpovedi[level][scena][2].length + odpovedi[level][scena][3].length + odpovedi[level][scena][4].length <= limit_otazky(3):
+    if odpoved2 + odpoved3 + odpoved4 <= limit_otazky(3):
         return [1, 3, 0, 0]
-    elif odpovedi[level][scena][3].length + odpovedi[level][scena][2].length <= limit_otazky(2):
+    elif odpoved3 + odpoved2 <= limit_otazky(2):
         return [1, 2, 1, 0]
-    elif odpovedi[level][scena][3].length + odpovedi[level][scena][4].length <= limit_otazky(2):
+    elif odpoved3 + odpoved4 <= limit_otazky(2):
         return [1, 1, 2, 0]
     else:
         return [1, 1, 1, 1]
 
-def displej_textu(txtNumero, txt):
-    if txt == None:# mega genialni system jak mit hledani z listu i specialni texty v jednom
-        OLED.write_string_new_line(texty[level][scena][txtNumero])
-    else:
-        OLED.write_string_new_line(texty[level][scena][txt])
-
-def displej_odpovedi(oznacenaOdpoved, deleniOdpovedi):#[4, 0, 0, 0], 0
+def displej_odpovedi(oznacenaOdpoved, lst):
     pozice = 0
     temp = 0
-    while temp < oznacenaOdpoved + 1: #3
-        temp = temp + deleniOdpovedi[pozice] #4
-        pozice = pozice + 1 #1
-    
-    for i in range(temp-deleniOdpovedi[pozice],temp-1):#0,1,2,3
+    deleniOdpovedi = [1] #oprava nejakyho bs ktery si python vymyslel
+    deleniOdpovedi = lst
+    while temp < oznacenaOdpoved + 1: 
+        temp = temp + deleniOdpovedi[pozice] 
+        pozice = pozice + 1 
+    for i in range(temp-deleniOdpovedi[pozice-1],temp):
         if odpovedi[level][scena][i] == None:
-            OLED.write_string_new_line("-----------")
+            OLED.write_string_new_line("--------")
+
         elif i == oznacenaOdpoved:
             OLED.write_string_new_line("0. " + odpovedi[level][scena][i])
+            print("0" + (i+1) + "." + odpovedi[level][scena][i])
         else:
-            OLED.write_string_new_line(str(i + 1) + "." + odpovedi[level][scena][i])
+            OLED.write_string_new_line(i + 1 + "." + odpovedi[level][scena][i])
+            print(i + 1 + "." + odpovedi[level][scena][i])
+    if deleniOdpovedi[pozice + 1] != 0:
+        OLED.write_string_new_line("........")
+
+
+
+def vybirac_textu(txtNumero,txt: str):
+    if txt == None: # mega genialni system jak mit hledani z listu i specialni texty v jednom
+        return texty[level][scena][txtNumero]
+    else:
+        return txt
+
+
+
+def delic_textu(txt: str):#rozdělí text na části co se vejdou na obrazovku
+    finalniList = []
+    pozice = 0
+    test = txt.length
+    while pozice + POCET_RADKU* LIMIT_RADEK < txt.length:
+        finalniList.append(txt[pozice:pozice + POCET_RADKU * LIMIT_RADEK])
+        pozice = pozice + (POCET_RADKU * LIMIT_RADEK) 
+    finalniList.append(txt[pozice:txt.length])
+    return finalniList
+
+def displej_textu(zobrazenaCast, lstTextu):
+    lstTxt = [] #oprava stejneho bs jako u odpovedi
+    lstTxt = lstTextu
+    OLED.write_string_new_line(lstTxt[zobrazenaCast])
+    print(lstTxt[zobrazenaCast])
+    if zobrazenaCast != lstTxt.length - 1:
+        OLED.write_string_new_line(".........")
+        print(".......")
+    
+
+ 
 
 
 
 
 
-
-
-def answer_time():
+def answer_time(txtNumero):
     changeDetector = 0
     navigation = 0
-    while not (button_pressed(confirmButton) and odpovedi[level][scena][navigation - 1] != None):
-        if button_pressed(downButton) and navigation < 5:
+    rozdeleni_odpovedi = delic_odpovedi()
+    rozdeleniTxtu = delic_textu(texty[level][scena][txtNumero])
+    while not (button_pressed(confirmButton) and odpovedi[level][scena][navigation - rozdeleniTxtu.length] != None):
+        if button_pressed(downButton) and navigation < 4 + rozdeleniTxtu.length:
             navigation = navigation + 1
         elif button_pressed(upButton) and navigation > 0:
             navigation = navigation - 1
 
         if navigation != changeDetector:
             OLED.clear()
-            if navigation == 0:
-                displej_textu(0, None)
+            if navigation <= rozdeleniTxtu.length:
+                displej_textu(navigation,rozdeleniTxtu)
             else:
-                displej_odpovedi(navigation - 1, [])
+                displej_odpovedi(navigation - 1, rozdeleni_odpovedi)
         basic.pause(200)
         changeDetector = navigation
-    return navigation - 1
+    return navigation - rozdeleniTxtu.length
 
 def confirm_time(txtNumero, txt):
-    while not (button_pressed(confirmButton)):
-        displej_textu(txtNumero, txt)
-
-
+    navigation = 0
+    changeDetector = 0
+    rozdeleniTxtu = delic_textu(vybirac_textu(txtNumero, txt))
+    while navigation < rozdeleniTxtu.length:
+        if button_pressed(downButton) and navigation < rozdeleniTxtu.length:
+            navigation = navigation + 1
+        elif button_pressed(upButton) and navigation > 0:
+            navigation = navigation - 1
+        if changeDetector != navigation:
+            OLED.clear()
+            displej_textu(navigation,rozdeleniTxtu)
+        changeDetector = navigation
 
 
 
